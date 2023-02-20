@@ -3,6 +3,7 @@ package gui;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ResourceBundle;
+import java.util.function.Consumer;
 
 import application.Main;
 import gui.util.Alerts;
@@ -35,12 +36,15 @@ public class MainViewController implements Initializable {
 	
 	@FXML
 	public void onMenuItemDepartmentAction() {
-		loadView2("/gui/DepartmentList.fxml");
+		loadView("/gui/DepartmentList.fxml", (DepartmentListController controller) -> {
+			controller.SetDepartmentService(new DepartmentService());
+			controller.updateTableView();
+		});
 	}
 	
 	@FXML
 	public void onMenuItemAboutAction() {
-		loadView("/gui/About.fxml");
+		loadView("/gui/About.fxml" , x -> {});
 	}
 	
 	
@@ -49,7 +53,7 @@ public class MainViewController implements Initializable {
 		
 	}
 	
-	private synchronized void loadView (String absoluteName) {
+	private synchronized <T> void loadView (String absoluteName, Consumer<T> initializingAction) {
 		
 		try {
 			FXMLLoader loader = new FXMLLoader(getClass().getResource(absoluteName));
@@ -65,6 +69,11 @@ public class MainViewController implements Initializable {
 			
 			// depois desses dois comandos agora a mainvBox tem o VBox da tela principal e de outra tela 
 			
+			T controller = loader.getController();
+			initializingAction.accept(controller);
+			
+			// Essas duas linhas acima irão executar a expressão lamba do controller que colocar como parâmetro dessa função 
+			
 			
 		} catch (IOException e) {
 			Alerts.showAlert("Io exception", "Error loading view", e.getMessage(), AlertType.ERROR);
@@ -72,32 +81,7 @@ public class MainViewController implements Initializable {
 		
 	}
 	
-private synchronized void loadView2 (String absoluteName) {
-		
-		try {
-			FXMLLoader loader = new FXMLLoader(getClass().getResource(absoluteName));
-			VBox newVBox = loader.load();
-			
-			Scene mainScene = Main.getMainScene(); // scene do tela principal
-			VBox mainVBox = (VBox) ((ScrollPane) mainScene.getRoot()).getContent(); // acessou o VBox da tela principal
-			
-			Node mainMenu = mainVBox.getChildren().get(0); 
-			mainVBox.getChildren().clear();
-			mainVBox.getChildren().add(mainMenu);
-			mainVBox.getChildren().addAll(newVBox.getChildren());
-			
-			// depois desses dois comandos agora a mainvBox tem o VBox da tela principal e de outra tela 
-			
-			DepartmentListController controller = loader.getController();
-			controller.SetDepartmentService(new DepartmentService()); // injetar a dependência 
-			controller.updateTableView();
-			
-		} catch (IOException e) {
-			Alerts.showAlert("Io exception", "Error loading view", e.getMessage(), AlertType.ERROR);
-		}
-		
-	}
-	
+
 	
 
 }
