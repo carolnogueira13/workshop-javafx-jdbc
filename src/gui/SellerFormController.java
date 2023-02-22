@@ -1,9 +1,11 @@
 package gui;
 
 import java.net.URL;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -112,7 +114,7 @@ public class SellerFormController implements Initializable {
 			notifyDataChangeListerners();
 			Utils.currentStage(event).close();
 		} catch (DbException e) {
-			Alerts.showAlert("Error savinf object", null, e.getMessage(), AlertType.ERROR);
+			Alerts.showAlert("Error saving object", null, e.getMessage(), AlertType.ERROR);
 		} catch (ValidationException e) {
 			setErrorMessage(e.getErrors());
 		}
@@ -126,7 +128,7 @@ public class SellerFormController implements Initializable {
 
 	}
 
-	private Seller getFormData() {
+	private Seller getFormData() { // pega os dados do preenchimento do formulário e retorna um obj com esses dados
 		Seller obj = new Seller();
 
 		ValidationException exception = new ValidationException("Validation Error");
@@ -137,6 +139,27 @@ public class SellerFormController implements Initializable {
 			exception.adderror("name", "Field can't be empty");
 		}
 		obj.setName(txtName.getText());
+		
+		if (txtEmail.getText() == null || txtEmail.getText().trim().equals("")) {
+			exception.adderror("email", "Field can't be empty");
+		}
+		obj.setEmail(txtEmail.getText());
+		
+		if (dpBirthDate.getValue() == null) {
+			exception.adderror("birthDate", "Field can't be empty");
+		}
+		else {
+			Instant instant = Instant.from(dpBirthDate.getValue().atStartOfDay(ZoneId.systemDefault()));
+			obj.setBirthDate(Date.from(instant));
+		}
+		
+		
+		if (txtBaseSalary.getText() == null || txtBaseSalary.getText().trim().equals("")) {
+			exception.adderror("baseSalary", "Field can't be empty");
+		}
+		obj.setBaseSalary(Utils.tryParsetoDouble(txtBaseSalary.getText()));
+		
+		obj.setDepartment(comboBoxDepartment.getValue());
 
 		if (exception.getErrors().size() > 0) { // se tiver pelo menos um erro, ele lança a exceção
 			throw exception;
@@ -199,10 +222,13 @@ public class SellerFormController implements Initializable {
 
 	private void setErrorMessage(Map<String, String> errors) {
 		Set<String> fields = errors.keySet();
-
-		if (fields.contains("name")) {
-			labelErrorName.setText(errors.get("name"));
-		}
+		
+		labelErrorName.setText((fields.contains("name") ? errors.get("name") : "")); // operador tenario, if e else
+		labelErrorEmail.setText((fields.contains("email") ? errors.get("email") : ""));
+		labelErrorBaseSalary.setText((fields.contains("baseSalary") ? errors.get("baseSalary") : ""));
+		labelErrorBirthDate.setText((fields.contains("birthDate") ? errors.get("birthDate") : ""));
+		
+		
 	}
 
 	private void initializeComboBoxDepartment() {
